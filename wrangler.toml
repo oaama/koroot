@@ -1,0 +1,14 @@
+name = "koroot"
+main = "src/worker.js"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+[[durable_objects.bindings]]
+name = "CAFE"
+class_name = "Cafe"
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Cafe"]
+[[rules]]
+type = "Text"
+globs = ["**/*.html", "**/*.svg"]
+fallthrough = false

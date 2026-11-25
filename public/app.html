@@ -56,7 +56,7 @@ async function join(){
 async function card(){
  const render=async()=>{const c=await api('/card/'+A);localStorage.setItem('card:'+c.cafe.slug,c.id);
   app.innerHTML=hdr(c.cafe.name)+`<div class="wrap"><p style="margin:0 0 10px">أهلاً ${c.name} 👋</p>${cardHtml(c,true)}<div id="near"></div>
-  <div class="box" style="margin-top:14px"><p style="margin:0">وريّ الكود للكاشير مع كل زيارة. باقي ${ar(c.need-c.stamps)} زيارة للمكافأة.</p></div></div>`;
+  ${c.cafe.wa?`<a class="btn alt" target="_blank" href="https://wa.me/${c.cafe.wa}?text=${encodeURIComponent('أهلاً، أنا '+c.name)}">كلّم ${c.cafe.name} على واتساب</a>`:''}<div class="box" style="margin-top:14px"><p style="margin:0">وريّ الكود للكاشير مع كل زيارة. باقي ${ar(c.need-c.stamps)} زيارة للمكافأة.</p></div></div>`;
   nearby(c)};
  try{await render()}catch(e){app.innerHTML=hdr('كروت')+'<div class="wrap"><div class="box">'+e.message+'</div></div>'}
  setInterval(()=>render().catch(()=>{}),15000)}
@@ -91,11 +91,20 @@ async function admin(){const pin=localStorage.getItem(pinKey);if(!pin)return log
  <div class="row"><div class="stat"><b>${ar(d.stats.customers)}</b><span>عميل</span></div><div class="stat"><b>${ar(d.stats.visitsWeek)}</b><span>زيارة الأسبوع</span></div><div class="stat"><b>${ar(d.stats.redeemed)}</b><span>مكافأة اتسلمت</span></div></div>
  <div class="box" style="margin-top:14px"><h2>كود تسجيل العملاء</h2><p>اطبعه وحطه على الكاونتر. العميل يمسحه ويعمل كارته.</p><img class="qr" style="width:170px;border:1px solid #eadfca" src="/api/qr?t=${encodeURIComponent(link)}"><p style="text-align:center;direction:ltr;font-size:12px;word-break:break-all">${link}</p><a class="btn alt" href="javascript:print()">طباعة</a></div>
  <div class="box"><h2>عملاء غابوا ${ar(d.cafe.winbackDays)} يوم أو أكتر <span class="tag">${ar(lost.length)}</span></h2>
- ${lost.length?lost.map(c=>`<div class="li"><div class="n">${c.name}<small>آخر زيارة من ${ar(c.days)} يوم</small></div><a class="wa" target="_blank" href="https://wa.me/${ph(c.phone)}?text=${msg(c)}">رسالة واتساب</a></div>`).join(''):'<p>مفيش حد غايب.</p>'}</div>
+ ${lost.length?lost.map(c=>`<div class="li"><div class="n">${c.name}<small>آخر زيارة من ${ar(c.days)} يوم</small></div>${d.cafe.waTokenSet&&d.cafe.waPhoneId?`<button style="width:auto;margin:0 0 0 6px;padding:8px 12px;font-size:13px" data-send="${c.id}">إرسال</button>`:''}<a class="wa" target="_blank" href="https://wa.me/${ph(c.phone)}?text=${msg(c)}">رسالة واتساب</a></div>`).join(''):'<p>مفيش حد غايب.</p>'}</div>
  <div class="box"><h2>كل العملاء</h2>${d.list.length?d.list.map(c=>`<div class="li"><div class="n">${c.name}<small>${c.phone} • ${ar(c.visits)} زيارة</small></div><span>${ar(c.stamps)}/${ar(c.need)}${c.free?' 🎁':''}</span></div>`).join(''):'<p>لسه مفيش عملاء.</p>'}</div>
  <div class="box"><h2>الإعدادات</h2><label>عدد الزيارات للمكافأة</label><input id="sn" type="number" min="3" max="12" value="${d.cafe.need}"><label>المكافأة</label><input id="sr" value="${d.cafe.reward}">
- <label>اعتبر العميل غايب بعد (أيام)</label><input id="sw" type="number" value="${d.cafe.winbackDays}"><button class="alt" id="loc">📍 استخدم مكاني الحالي للتذكير القريب</button><div class="err" id="e">${d.cafe.lat?'تم تحديد موقع الكافيه ✓':''}</div><button id="sv">حفظ</button></div></div>`;
+ <label>اعتبر العميل غايب بعد (أيام)</label><input id="sw" type="number" value="${d.cafe.winbackDays}"><label>رقم واتساب الكافيه (مثال 201001234567)</label><input id="wn" inputmode="tel" value="${d.cafe.wa||''}">
+ <label>نص رسالة "وحشتنا" ({name} {days} {cafe} {left} {reward})</label><input id="wt" value="${(d.cafe.waTemplate||'').replace(/"/g,'&quot;')}">
+ <div class="box" style="background:#e7f6ec;margin:12px 0 0"><h2 style="font-size:15px">ربط رقم واتساب (مجاني)</h2><p style="font-size:13px" id="ws">...</p><div id="wq"></div><button class="alt" id="we">تشغيل الربط</button></div>
+ <div class="box" style="background:#f3ead8;margin:12px 0 0"><h2 style="font-size:15px">واتساب الرسمي (Cloud API، اختياري)</h2><p style="font-size:13px">الرابط ده تحطه كـ Webhook في تطبيق Meta، والـ Verify token تحت.</p>
+ <p style="direction:ltr;font-size:12px;word-break:break-all;margin:0">${location.origin}${d.webhook}<br>Verify token: ${d.cafe.waVerify}</p>
+ <label>Phone number ID</label><input id="wp" value="${d.cafe.waPhoneId||''}"><label>Access token ${d.cafe.waTokenSet?'(محفوظ ✓، سيبه فاضي للإبقاء)':''}</label><input id="wk" type="password"><label>اسم قالب الرسالة المعتمد (اختياري)</label><input id="wl" value="${d.cafe.waTplName||''}"></div>
+ <button class="alt" id="loc">📍 استخدم مكاني الحالي للتذكير القريب</button><div class="err" id="e">${d.cafe.lat?'تم تحديد موقع الكافيه ✓':''}</div><button id="sv">حفظ</button></div></div>`;
+ document.querySelectorAll('[data-send]').forEach(b=>b.onclick=async()=>{try{await api('/cafe/'+A+'/winback',{id:b.dataset.send},pin);b.textContent='اتبعت ✓'}catch(e){alert(e.message)}});const ws=async()=>{try{const s=await api('/cafe/'+A+'/wa-status',{},pin);$('#we').textContent=s.enabled?'إيقاف الربط':'تشغيل الربط';$('#we').onclick=async()=>{await api('/cafe/'+A+'/wa-enable',{on:!s.enabled},pin);ws()};
+ const t={off:'الربط مقفول',waiting:'في انتظار الجسر...',qr:'افتح واتساب على الموبايل > الأجهزة المرتبطة > ربط جهاز، وامسح الكود',open:'متصل ✓ '+(s.number||''),closed:'الاتصال اتقطع، بيعيد المحاولة',logged_out:'تم تسجيل الخروج، فعّل الربط من جديد'};
+ $('#ws').textContent=s.enabled?(t[s.status]||'في انتظار الجسر...'):t.off;$('#wq').innerHTML=s.qr?`<img class="qr" style="width:210px" src="/api/qr?t=${encodeURIComponent(s.qr)}">`:'';if(s.enabled&&s.status!=='open')setTimeout(ws,4000)}catch{}};ws();
  let pos={};$('#loc').onclick=()=>navigator.geolocation.getCurrentPosition(p=>{pos={lat:p.coords.latitude,lng:p.coords.longitude};$('#e').textContent='تم أخذ الموقع، اضغط حفظ'},()=>$('#e').textContent='مش قادر أحدد الموقع');
- $('#sv').onclick=async()=>{await api('/cafe/'+A+'/settings',{need:$('#sn').value,reward:$('#sr').value,winbackDays:$('#sw').value,...pos},pin);admin()}}
+ $('#sv').onclick=async()=>{await api('/cafe/'+A+'/settings',{need:$('#sn').value,reward:$('#sr').value,winbackDays:$('#sw').value,wa:$('#wn').value,waTemplate:$('#wt').value,waPhoneId:$('#wp').value,waToken:$('#wk').value,waTplName:$('#wl').value,...pos},pin);admin()}}
 ({'':landing,c:join,card,staff,admin}[R]||landing)();
 </script></body></html>
