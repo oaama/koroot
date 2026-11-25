@@ -1,0 +1,101 @@
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1c3d2e"><link rel="manifest" href="/manifest.json"><link rel="icon" href="/icon.svg"><title>كروت</title>
+<style>
+:root{--g:#1c3d2e;--g2:#2f8f5b;--bg:#f6efe3;--card:#fffaf1;--br:#6b3f2a;--mut:#7a6f62}
+*{box-sizing:border-box}body{margin:0;font-family:"Segoe UI",Tahoma,"Noto Naskh Arabic","Noto Sans Arabic",sans-serif;background:var(--bg);color:#2a2118;min-height:100vh}
+.top{background:var(--g);color:#fff;padding:14px 16px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:5}
+.top b{font-size:18px;flex:1}.logo{width:30px;height:30px;border-radius:8px}
+.wrap{max-width:460px;margin:0 auto;padding:16px}
+.box{background:var(--card);border-radius:18px;padding:16px;margin-bottom:14px;box-shadow:0 2px 10px #0001}
+h1{font-size:22px;margin:4px 0 6px}h2{font-size:17px;margin:0 0 10px}p{color:var(--mut);line-height:1.7;margin:4px 0 10px}
+label{display:block;font-size:13px;color:var(--mut);margin:10px 0 4px}
+input,select{width:100%;padding:12px;border:1.5px solid #dccfb9;border-radius:12px;font:inherit;background:#fff}
+button,.btn{display:inline-block;border:0;background:var(--g2);color:#fff;font:inherit;font-weight:700;padding:13px 16px;border-radius:12px;width:100%;margin-top:12px;text-align:center;text-decoration:none;cursor:pointer}
+button.alt,.btn.alt{background:#e9dfcb;color:var(--g)}button.red{background:#b4472f}
+.err{color:#b4472f;font-size:14px;min-height:20px;margin-top:8px}
+.ccard{background:linear-gradient(145deg,#4b2a1c,#7a4a33);color:#fff;border-radius:22px;padding:18px;box-shadow:0 8px 22px #4b2a1c55}
+.ccard .h{display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:18px}
+.stamps{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin:16px 0}
+.st{aspect-ratio:1;border-radius:50%;border:2px dashed #ffffff66;display:flex;align-items:center;justify-content:center;font-size:20px}
+.st.on{color:#4b2a1c;font-weight:800;background:#f6efe3;border:2px solid #f6efe3}
+.qr{background:#fff;border-radius:14px;padding:8px;width:150px;margin:6px auto 0;display:block}
+.free{background:#e7f6ec;color:#176b3a;border-radius:12px;padding:10px;text-align:center;font-weight:700;margin-top:12px}
+.row{display:flex;gap:10px}.row>*{flex:1}
+.stat{background:#fff;border-radius:14px;padding:12px;text-align:center}.stat b{display:block;font-size:24px;color:var(--g)}.stat span{font-size:12px;color:var(--mut)}
+.li{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #eadfca}.li:last-child{border:0}
+.li .n{flex:1}.li small{color:var(--mut);display:block}.wa{background:#25d366;color:#fff;padding:8px 12px;border-radius:10px;text-decoration:none;font-size:13px;font-weight:700}
+.tabs{display:flex;gap:6px;margin-bottom:12px}.tabs a{flex:1;text-align:center;padding:10px;border-radius:12px;background:#e9dfcb;color:var(--g);text-decoration:none;font-weight:700;font-size:14px}.tabs a.on{background:var(--g);color:#fff}
+.tag{background:#fde8e1;color:#b4472f;border-radius:8px;padding:2px 8px;font-size:12px}
+.near{background:#e7f6ec;border:1.5px solid #9fd5b4;border-radius:14px;padding:12px;margin-top:12px;font-size:14px}
+</style></head><body><div id="app"></div>
+<script>
+const $=s=>document.querySelector(s),app=$('#app');
+const api=(u,b,pin)=>fetch('/api'+u,b?{method:'POST',headers:{'content-type':'application/json',...(pin?{'x-pin':pin}:{})},body:JSON.stringify(b)}:{}).then(async r=>{const j=await r.json();if(!r.ok)throw new Error(j.error||'حصل خطأ');return j});
+const hdr=t=>`<div class="top"><img class="logo" src="/icon.svg"><b>${t}</b></div>`;
+const ar=n=>String(n).replace(/\d/g,d=>'٠١٢٣٤٥٦٧٨٩'[d]);
+const parts=location.pathname.split('/').filter(Boolean);const R=parts[0]||'',A=parts[1];
+const pinKey='pin:'+A;
+function stampsHtml(c){let h='';for(let i=0;i<c.need;i++)h+=`<div class="st ${i<c.stamps?'on':''}">${i<c.stamps?'✓':''}</div>`;return h}
+function cardHtml(c,qr){return `<div class="ccard"><div class="h"><span>☕ ${c.cafe.name}</span><span style="font-size:13px;opacity:.8">${ar(c.stamps)}/${ar(c.need)}</span></div>
+<div class="stamps" style="grid-template-columns:repeat(${c.need>8?6:5},1fr)">${stampsHtml(c)}</div>
+<div style="font-size:13px;opacity:.85;margin-bottom:6px">المكافأة: ${c.reward}</div>${qr?`<img class="qr" src="/api/qr?t=${encodeURIComponent(c.id)}"><div style="text-align:center;font-size:12px;opacity:.8;margin-top:6px">${c.id}</div>`:''}</div>
+${c.free?`<div class="free">🎁 عندك ${ar(c.free)} ${c.reward} جاهزة، وريها للكاشير</div>`:''}`}
+async function landing(){
+ app.innerHTML=hdr('كروت')+`<div class="wrap"><div class="box"><h1>كارت ولاء لكافيهك</h1><p>العميل يسجل برقم موبايله ويجيله كارت بـ QR. الكاشير يختم، والعميل ياخد مكافأة بعد عدد زيارات تحدده.</p>
+ <label>اسم الكافيه</label><input id="n" placeholder="مثال: قهوة الركن"><label>عدد الزيارات للمكافأة</label><select id="s">${[5,6,8,10].map(x=>`<option ${x==6?'selected':''}>${x}</option>`).join('')}</select>
+ <label>المكافأة</label><input id="r" value="قهوة مجانًا"><label>رقم سري للكاشير (4 إلى 8 أرقام)</label><input id="p" inputmode="numeric" maxlength="8">
+ <button id="go">ابدأ</button><div class="err" id="e"></div></div></div>`;
+ $('#go').onclick=async()=>{try{const r=await api('/cafes',{name:$('#n').value,need:$('#s').value,reward:$('#r').value,pin:$('#p').value});localStorage.setItem('pin:'+r.slug,$('#p').value);location.href='/admin/'+r.slug}catch(e){$('#e').textContent=e.message}}}
+async function join(){
+ const c=await api('/cafe/'+A).catch(()=>null);if(!c)return app.innerHTML=hdr('كروت')+'<div class="wrap"><div class="box">الكافيه غير موجود</div></div>';
+ const saved=localStorage.getItem('card:'+A);if(saved)return location.replace('/card/'+saved);
+ app.innerHTML=hdr(c.name)+`<div class="wrap"><div class="box"><h1>أهلاً بيك في ${c.name}</h1><p>سجّل مرة واحدة واجمع ${ar(c.need)} زيارات، والـ${c.reward} علينا.</p>
+ <label>اسمك</label><input id="n" autocomplete="name"><label>رقم الموبايل</label><input id="p" inputmode="tel" autocomplete="tel" placeholder="01xxxxxxxxx">
+ <button id="go">اعمل الكارت</button><div class="err" id="e"></div></div></div>`;
+ $('#go').onclick=async()=>{try{const r=await api('/cafe/'+A+'/join',{name:$('#n').value,phone:$('#p').value});localStorage.setItem('card:'+A,r.id);location.href='/card/'+r.id}catch(e){$('#e').textContent=e.message}}}
+async function card(){
+ const render=async()=>{const c=await api('/card/'+A);localStorage.setItem('card:'+c.cafe.slug,c.id);
+  app.innerHTML=hdr(c.cafe.name)+`<div class="wrap"><p style="margin:0 0 10px">أهلاً ${c.name} 👋</p>${cardHtml(c,true)}<div id="near"></div>
+  <div class="box" style="margin-top:14px"><p style="margin:0">وريّ الكود للكاشير مع كل زيارة. باقي ${ar(c.need-c.stamps)} زيارة للمكافأة.</p></div></div>`;
+  nearby(c)};
+ try{await render()}catch(e){app.innerHTML=hdr('كروت')+'<div class="wrap"><div class="box">'+e.message+'</div></div>'}
+ setInterval(()=>render().catch(()=>{}),15000)}
+function nearby(c){const el=$('#near');if(!c.cafe.lat)return;
+ if(localStorage.getItem('near:'+c.cafe.slug)){el.innerHTML='<div class="near">📍 التذكير القريب شغال: هنفكرك لو عدّيت جنب الكافيه والصفحة مفتوحة.</div>';
+  navigator.geolocation.getCurrentPosition(p=>{const d=dist(p.coords.latitude,p.coords.longitude,c.cafe.lat,c.cafe.lng);if(d<150){el.innerHTML=`<div class="near">☕ أنت قريب من ${c.cafe.name} (حوالي ${ar(Math.round(d))} متر). ${c.need-c.stamps} زيارة وتاخد المكافأة!</div>`;try{new Notification(c.cafe.name,{body:'أنت قريب مننا، عدّي خد قهوتك ☕'})}catch{}}})}
+ else{el.innerHTML='<button class="alt" id="nb">📍 نبّهني لو عدّيت قريب من الكافيه</button>';$('#nb').onclick=()=>{Notification.requestPermission?.();navigator.geolocation.getCurrentPosition(()=>{localStorage.setItem('near:'+c.cafe.slug,1);nearby(c)},()=>{})}}}
+function dist(a,b,c,d){const R=6371e3,t=x=>x*Math.PI/180,q=Math.sin(t(c-a)/2)**2+Math.cos(t(a))*Math.cos(t(c))*Math.sin(t(d-b)/2)**2;return 2*R*Math.asin(Math.sqrt(q))}
+function nav(on){return `<div class="tabs"><a class="${on=='s'?'on':''}" href="/staff/${A}">الكاشير</a><a class="${on=='a'?'on':''}" href="/admin/${A}">لوحة المالك</a></div>`}
+async function login(next){
+ app.innerHTML=hdr('دخول')+`<div class="wrap"><div class="box"><h2>الرقم السري</h2><input id="p" inputmode="numeric" type="password"><button id="go">دخول</button><div class="err" id="e"></div></div></div>`;
+ $('#go').onclick=async()=>{try{await api('/cafe/'+A+'/login',{},$('#p').value);localStorage.setItem(pinKey,$('#p').value);next()}catch(e){$('#e').textContent=e.message}}}
+async function staff(){const pin=localStorage.getItem(pinKey);if(!pin)return login(staff);
+ let cur=null;
+ const show=()=>{$('#res').innerHTML=cur?`<div class="box" style="margin-top:12px"><h2>${cur.name} <small style="color:var(--mut);font-weight:400">${cur.phone}</small></h2>${cardHtml(cur,false)}
+ <button id="st">ختم زيارة ☕</button>${cur.free?'<button class="red" id="rd">تسليم المكافأة 🎁</button>':''}</div>`:'';
+ if(cur){$('#st').onclick=()=>act('stamp');if(cur.free)$('#rd').onclick=()=>act('redeem')}};
+ const act=async k=>{try{cur=await api('/cafe/'+A+'/'+k,{id:cur.id},pin);$('#e').textContent='';show()}catch(e){$('#e').textContent=e.message}};
+ app.innerHTML=hdr('الكاشير')+`<div class="wrap">${nav('s')}<div class="box"><label style="margin-top:0">كود الكارت أو رقم الموبايل</label><input id="q" inputmode="text" placeholder="اكتب أو امسح الكود">
+ <button id="f">بحث</button><button class="alt" id="cam">📷 مسح QR بالكاميرا</button><video id="v" playsinline style="width:100%;border-radius:12px;margin-top:10px;display:none"></video><div class="err" id="e"></div></div><div id="res"></div></div>`;
+ const find=async q=>{try{cur=await api('/cafe/'+A+'/find',{q},pin);$('#e').textContent='';show()}catch(e){cur=null;show();$('#e').textContent=e.message}};
+ $('#f').onclick=()=>find($('#q').value);$('#q').onkeydown=e=>e.key==='Enter'&&find($('#q').value);
+ $('#cam').onclick=async()=>{if(!('BarcodeDetector'in window))return $('#e').textContent='الكاميرا مش مدعومة في المتصفح ده، اكتب الكود';
+  const v=$('#v');v.style.display='block';v.srcObject=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});v.play();const d=new BarcodeDetector({formats:['qr_code']});
+  const t=setInterval(async()=>{const r=await d.detect(v).catch(()=>[]);if(r[0]){clearInterval(t);v.srcObject.getTracks().forEach(x=>x.stop());v.style.display='none';find(r[0].rawValue)}},400)}}
+async function admin(){const pin=localStorage.getItem(pinKey);if(!pin)return login(admin);
+ let d;try{d=await api('/cafe/'+A+'/admin',{},pin)}catch(e){localStorage.removeItem(pinKey);return login(admin)}
+ const link=location.origin+'/c/'+A;const lost=d.list.filter(c=>c.days!==null&&c.days>=d.cafe.winbackDays);
+ const msg=c=>encodeURIComponent(`وحشتنا يا ${c.name} ☕ بقالك ${c.days} يوم مجيتش. عدّي علينا في ${d.cafe.name}، ${c.need-c.stamps} زيارة بس وتاخد ${c.reward}.`);
+ const ph=p=>p.startsWith('0')?'2'+p:p;
+ app.innerHTML=hdr(d.cafe.name)+`<div class="wrap">${nav('a')}
+ <div class="row"><div class="stat"><b>${ar(d.stats.customers)}</b><span>عميل</span></div><div class="stat"><b>${ar(d.stats.visitsWeek)}</b><span>زيارة الأسبوع</span></div><div class="stat"><b>${ar(d.stats.redeemed)}</b><span>مكافأة اتسلمت</span></div></div>
+ <div class="box" style="margin-top:14px"><h2>كود تسجيل العملاء</h2><p>اطبعه وحطه على الكاونتر. العميل يمسحه ويعمل كارته.</p><img class="qr" style="width:170px;border:1px solid #eadfca" src="/api/qr?t=${encodeURIComponent(link)}"><p style="text-align:center;direction:ltr;font-size:12px;word-break:break-all">${link}</p><a class="btn alt" href="javascript:print()">طباعة</a></div>
+ <div class="box"><h2>عملاء غابوا ${ar(d.cafe.winbackDays)} يوم أو أكتر <span class="tag">${ar(lost.length)}</span></h2>
+ ${lost.length?lost.map(c=>`<div class="li"><div class="n">${c.name}<small>آخر زيارة من ${ar(c.days)} يوم</small></div><a class="wa" target="_blank" href="https://wa.me/${ph(c.phone)}?text=${msg(c)}">رسالة واتساب</a></div>`).join(''):'<p>مفيش حد غايب.</p>'}</div>
+ <div class="box"><h2>كل العملاء</h2>${d.list.length?d.list.map(c=>`<div class="li"><div class="n">${c.name}<small>${c.phone} • ${ar(c.visits)} زيارة</small></div><span>${ar(c.stamps)}/${ar(c.need)}${c.free?' 🎁':''}</span></div>`).join(''):'<p>لسه مفيش عملاء.</p>'}</div>
+ <div class="box"><h2>الإعدادات</h2><label>عدد الزيارات للمكافأة</label><input id="sn" type="number" min="3" max="12" value="${d.cafe.need}"><label>المكافأة</label><input id="sr" value="${d.cafe.reward}">
+ <label>اعتبر العميل غايب بعد (أيام)</label><input id="sw" type="number" value="${d.cafe.winbackDays}"><button class="alt" id="loc">📍 استخدم مكاني الحالي للتذكير القريب</button><div class="err" id="e">${d.cafe.lat?'تم تحديد موقع الكافيه ✓':''}</div><button id="sv">حفظ</button></div></div>`;
+ let pos={};$('#loc').onclick=()=>navigator.geolocation.getCurrentPosition(p=>{pos={lat:p.coords.latitude,lng:p.coords.longitude};$('#e').textContent='تم أخذ الموقع، اضغط حفظ'},()=>$('#e').textContent='مش قادر أحدد الموقع');
+ $('#sv').onclick=async()=>{await api('/cafe/'+A+'/settings',{need:$('#sn').value,reward:$('#sr').value,winbackDays:$('#sw').value,...pos},pin);admin()}}
+({'':landing,c:join,card,staff,admin}[R]||landing)();
+</script></body></html>
